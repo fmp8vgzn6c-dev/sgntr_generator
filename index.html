@@ -1,0 +1,662 @@
+import { useMemo, useRef, useState } from "react";
+import { Clipboard, Check, RotateCcw, Mail, User, Phone, Building2, Eye, Database } from "lucide-react";
+import { KNAUF, KnaufWordmark } from "/knauf/brand";
+
+const MOCK_SIGNATURES = [
+  {
+    id: "sales",
+    label: "Sales manager mock data",
+    data: {
+      fullName: "Anna Kowalska",
+      position: "Sales Manager",
+      department: "Commercial Department",
+      company: "Company Name Sp. z o.o.",
+      jobDescription: "Sales development, key account support and customer relations",
+      phone: "+48 22 000 00 11",
+      mobile: "+48 600 000 111",
+      email: "anna.kowalska@company.com",
+      website: "www.company.com",
+      addressLine1: "ul. Przykładowa 10",
+      addressLine2: "00-001 Warszawa, Poland",
+      customLine1: "Office hours: Mon–Fri, 08:00–16:00",
+      customLine2: "Customer support: support@company.com",
+      disclaimer: "This email and any attachments may contain confidential information intended only for the recipient.",
+      brandColor: "#0A66C2",
+      accentColor: "#E6F0FA",
+      includeDisclaimer: true,
+      includeAddress: true,
+      includeJobDescription: true
+    }
+  },
+  {
+    id: "hr",
+    label: "HR specialist mock data",
+    data: {
+      fullName: "Michał Nowak",
+      position: "HR Specialist",
+      department: "People & Culture",
+      company: "Company Name Sp. z o.o.",
+      jobDescription: "Recruitment, onboarding and employee support",
+      phone: "+48 22 000 00 22",
+      mobile: "",
+      email: "michal.nowak@company.com",
+      website: "www.company.com/careers",
+      addressLine1: "ul. Firmowa 25",
+      addressLine2: "30-001 Kraków, Poland",
+      customLine1: "Please book meetings in advance.",
+      customLine2: "",
+      disclaimer: "This message may contain personal or confidential information. If you received it by mistake, please delete it and notify the sender.",
+      brandColor: "#334155",
+      accentColor: "#E2E8F0",
+      includeDisclaimer: true,
+      includeAddress: true,
+      includeJobDescription: true
+    }
+  },
+  {
+    id: "it",
+    label: "IT support mock data",
+    data: {
+      fullName: "Julia Zielińska",
+      position: "IT Support Coordinator",
+      department: "IT Services",
+      company: "Company Name Sp. z o.o.",
+      jobDescription: "Workplace tools, access requests and service desk coordination",
+      phone: "+48 22 000 00 33",
+      mobile: "+48 700 000 333",
+      email: "julia.zielinska@company.com",
+      website: "helpdesk.company.com",
+      addressLine1: "Service Desk, Building B",
+      addressLine2: "00-001 Warszawa, Poland",
+      customLine1: "For urgent issues, create a ticket in the Service Desk portal.",
+      customLine2: "Ticket response time depends on priority.",
+      disclaimer: "This email may include internal technical information. Do not forward it outside the organisation unless authorised.",
+      brandColor: "#2563EB",
+      accentColor: "#DBEAFE",
+      includeDisclaimer: true,
+      includeAddress: true,
+      includeJobDescription: true
+    }
+  }
+];
+
+export default function WorkEmailSignatureGenerator() {
+  const [copied, setCopied] = useState("");
+  const [selectedMock, setSelectedMock] = useState("sales");
+  const previewRef = useRef(null);
+
+  const [form, setForm] = useState({
+    fullName: "Firstname Lastname",
+    position: "Job Title / Position",
+    department: "Department / Team",
+    company: "Company Name",
+    jobDescription: "Short job description or responsibility line",
+    phone: "+48 000 000 000",
+    mobile: "",
+    email: "firstname.lastname@company.com",
+    website: "www.company.com",
+    addressLine1: "Street and number",
+    addressLine2: "Postal code, City, Country",
+    customLine1: "",
+    customLine2: "",
+    disclaimer: "This email and any attachments may contain confidential information intended only for the recipient.",
+    brandColor: "#003778",
+    accentColor: "#CFD7D9",
+    includeDisclaimer: false,
+    includeAddress: true,
+    includeJobDescription: true
+  });
+
+  const update = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value
+    }));
+    setCopied("");
+  };
+
+  const signatureHtml = useMemo(() => {
+    const esc = (value) =>
+      String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+    const linkEmail = form.email
+      ? `<a href="mailto:${esc(form.email)}" style="color:${esc(form.brandColor)}; text-decoration:none;">${esc(form.email)}</a>`
+      : "";
+
+    const linkWebsite = form.website
+      ? `<a href="https://${esc(form.website.replace(/^https?:\/\//, ""))}" style="color:${esc(form.brandColor)}; text-decoration:none;">${esc(form.website)}</a>`
+      : "";
+
+    const contactParts = [
+      form.phone ? `T: ${esc(form.phone)}` : "",
+      form.mobile ? `M: ${esc(form.mobile)}` : "",
+      linkEmail,
+      linkWebsite
+    ].filter(Boolean);
+
+    const addressLines = [form.addressLine1, form.addressLine2].filter(Boolean);
+    const customLines = [form.customLine1, form.customLine2].filter(Boolean);
+
+    return `
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, Helvetica, sans-serif; color:#1f2937; line-height:1.35; max-width:620px;">
+  <tr>
+    <td style="padding:0 0 10px 0;">
+      <div style="font-size:14px; font-weight:700; color:${esc(form.brandColor)};">${esc(form.company)}</div>
+      ${
+        contactParts.length
+          ? `<div style="font-size:13px; color:#374151; margin-top:4px;">${contactParts.join(" &nbsp;|&nbsp; ")}</div>`
+          : ""
+      }
+      ${
+        form.includeAddress && addressLines.length
+          ? `<div style="font-size:12px; color:#6b7280; margin-top:5px;">${addressLines.map(esc).join("<br />")}</div>`
+          : ""
+      }
+      ${
+        customLines.length
+          ? `<div style="font-size:12px; color:#6b7280; margin-top:6px;">${customLines.map(esc).join("<br />")}</div>`
+          : ""
+      }
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:8px 0 0 0;">
+      <div style="height:1px; background:${esc(form.accentColor)}; width:100%; max-width:560px;"></div>
+    </td>
+  </tr>
+
+  ${
+    form.includeDisclaimer && form.disclaimer
+      ? `<tr>
+          <td style="padding:10px 0 0 0;">
+            <div style="font-size:10.5px; color:#9ca3af; max-width:560px;">${esc(form.disclaimer)}</div>
+          </td>
+        </tr>`
+      : ""
+  }
+</table>`.trim();
+  }, [form]);
+
+  const plainText = useMemo(() => {
+    return [
+      form.fullName,
+      form.position,
+      form.department,
+      form.includeJobDescription ? form.jobDescription : "",
+      form.company,
+      form.phone ? `T: ${form.phone}` : "",
+      form.mobile ? `M: ${form.mobile}` : "",
+      form.email,
+      form.website,
+      form.includeAddress ? form.addressLine1 : "",
+      form.includeAddress ? form.addressLine2 : "",
+      form.customLine1,
+      form.customLine2,
+      form.includeDisclaimer ? form.disclaimer : ""
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }, [form]);
+
+  const buildExportHtml = async () => {
+    if (!previewRef.current) return signatureHtml;
+
+    const clone = previewRef.current.cloneNode(true);
+    const sourceLogo = previewRef.current.querySelector("svg");
+    const clonedLogo = clone.querySelector("svg");
+
+    if (sourceLogo && clonedLogo) {
+      try {
+        const svgText = new XMLSerializer().serializeToString(sourceLogo);
+        const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+        const objectUrl = URL.createObjectURL(svgBlob);
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = objectUrl;
+        });
+
+        const logoHeight = 34;
+        const logoWidth = Math.round(logoHeight * 1.975);
+        const scale = 3;
+        const logoCanvas = document.createElement("canvas");
+        logoCanvas.width = logoWidth * scale;
+        logoCanvas.height = logoHeight * scale;
+
+        const logoContext = logoCanvas.getContext("2d");
+        logoContext.fillStyle = "#FFFFFF";
+        logoContext.fillRect(0, 0, logoCanvas.width, logoCanvas.height);
+        logoContext.drawImage(image, 0, 0, logoCanvas.width, logoCanvas.height);
+        URL.revokeObjectURL(objectUrl);
+
+        const logoImage = document.createElement("img");
+        logoImage.src = logoCanvas.toDataURL("image/png");
+        logoImage.alt = "Knauf";
+        logoImage.style.height = `${logoHeight}px`;
+        logoImage.style.width = "auto";
+        logoImage.style.display = "block";
+        logoImage.style.border = "0";
+        clonedLogo.replaceWith(logoImage);
+      } catch {
+        // If conversion is blocked, keep the inline SVG as the fallback.
+      }
+    }
+
+    return clone.innerHTML;
+  };
+
+  const copyRichSignature = async () => {
+    const copyBySelection = async () => {
+      const html = await buildExportHtml();
+      const temporaryContainer = document.createElement("div");
+      temporaryContainer.innerHTML = html;
+      temporaryContainer.style.position = "fixed";
+      temporaryContainer.style.left = "-9999px";
+      temporaryContainer.style.top = "0";
+      temporaryContainer.style.backgroundColor = "#FFFFFF";
+      document.body.appendChild(temporaryContainer);
+
+      const range = document.createRange();
+      range.selectNodeContents(temporaryContainer);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const success = document.execCommand("copy");
+      selection.removeAllRanges();
+      document.body.removeChild(temporaryContainer);
+      return success;
+    };
+
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const exportHtml = await buildExportHtml();
+        const htmlBlob = new Blob([exportHtml], { type: "text/html" });
+        const textBlob = new Blob([plainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": htmlBlob,
+            "text/plain": textBlob
+          })
+        ]);
+        setCopied("rich");
+        return;
+      }
+
+      if (await copyBySelection()) {
+        setCopied("rich");
+        return;
+      }
+
+      setCopied("manual");
+    } catch {
+      if (await copyBySelection()) {
+        setCopied("rich");
+      } else {
+        setCopied("manual");
+      }
+    }
+  };
+
+  const copyTextFallback = (value) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const success = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return success;
+  };
+
+  const copyHtml = async () => {
+    const html = await buildExportHtml();
+
+    try {
+      await navigator.clipboard.writeText(html);
+      setCopied("html");
+    } catch {
+      if (copyTextFallback(html)) {
+        setCopied("html");
+      } else {
+        setCopied("manual");
+      }
+    }
+  };
+
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(plainText);
+      setCopied("text");
+    } catch {
+      if (copyTextFallback(plainText)) {
+        setCopied("text");
+      } else {
+        setCopied("manual");
+      }
+    }
+  };
+
+  const loadMockData = () => {
+    const mock = MOCK_SIGNATURES.find((item) => item.id === selectedMock);
+
+    if (!mock) return;
+
+    setForm(mock.data);
+    setCopied("mock");
+  };
+
+  const reset = () => {
+    setForm({
+      fullName: "Firstname Lastname",
+      position: "Job Title / Position",
+      department: "Department / Team",
+      company: "Company Name",
+      jobDescription: "Short job description or responsibility line",
+      phone: "+48 000 000 000",
+      mobile: "",
+      email: "firstname.lastname@company.com",
+      website: "www.company.com",
+      addressLine1: "Street and number",
+      addressLine2: "Postal code, City, Country",
+      customLine1: "",
+      customLine2: "",
+      disclaimer: "This email and any attachments may contain confidential information intended only for the recipient.",
+      brandColor: "#003778",
+      accentColor: "#CFD7D9",
+      includeDisclaimer: false,
+      includeAddress: true,
+      includeJobDescription: true
+    });
+    setCopied("");
+  };
+
+  const Field = ({ label, field, placeholder, type = "text" }) => (
+    <label className="block">
+      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+      <input
+        type={type}
+        value={form[field]}
+        onChange={(event) => update(field, event.target.value)}
+        placeholder={placeholder}
+        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+      />
+    </label>
+  );
+
+  const Toggle = ({ label, field }) => (
+    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <input
+        type="checkbox"
+        checked={form[field]}
+        onChange={(event) => update(field, event.target.checked)}
+        className="h-5 w-5 accent-blue-600"
+      />
+    </label>
+  );
+
+  return (
+    <main className="min-h-screen p-6" style={{ backgroundColor: KNAUF.surface.page, color: KNAUF.ink.primary, fontFamily: KNAUF.typography.body }}> 
+      <section className="mx-auto max-w-6xl">
+        <header className="mb-6 rounded-3xl border p-7 shadow-sm" style={{ backgroundColor: KNAUF.surface.card, borderColor: KNAUF.surface.border }}> 
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-5 flex flex-wrap items-center gap-6">
+                <KnaufWordmark height={34} fill={KNAUF.brand.logoCyan} />
+                <div className="h-10 w-px" style={{ backgroundColor: KNAUF.surface.border }} />
+                <div className="hidden rounded-full px-3 py-1 text-sm font-bold md:inline-flex" style={{ backgroundColor: KNAUF.brand.yellow, color: KNAUF.ink.primary }}>
+                  Build on Us.
+                </div>
+                <div className="hidden h-10 w-px md:block" style={{ backgroundColor: KNAUF.surface.border }} />
+                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium" style={{ backgroundColor: KNAUF.surface.page, color: KNAUF.ink.heading }}>
+                  <Mail size={16} />
+                  Work email signature builder
+                </div>
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight" style={{ color: KNAUF.ink.heading, fontFamily: KNAUF.typography.heading }}> 
+                Create a Knauf-style email signature
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Enter each line, preview it instantly, then copy a clean Knauf-branded signature into Outlook, Gmail, or another mail client.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+            >
+              <RotateCcw size={17} />
+              Reset
+            </button>
+          </div>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: KNAUF.brand.accessibleBlue, color: KNAUF.surface.card }}>
+                <User size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Signature details</h2>
+                <p className="text-sm text-slate-500">Edit every visible line of the signature.</p>
+              </div>
+            </div>
+
+            <div className="mb-5 rounded-3xl bg-blue-50 p-4 ring-1 ring-blue-100">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-900">
+                <Database size={17} />
+                Mock data upload
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="block md:col-span-2">
+                  <span className="mb-1 block text-sm font-medium text-blue-900">Choose mock profile</span>
+                  <select
+                    value={selectedMock}
+                    onChange={(event) => {
+                      setSelectedMock(event.target.value);
+                      setCopied("");
+                    }}
+                    className="h-11 w-full rounded-2xl border border-blue-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  >
+                    {MOCK_SIGNATURES.map((mock) => (
+                      <option key={mock.id} value={mock.id}>
+                        {mock.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={loadMockData}
+                  className="flex h-11 items-center justify-center gap-2 self-end rounded-2xl px-4 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-200"
+                  style={{ backgroundColor: KNAUF.brand.accessibleBlue, color: KNAUF.surface.card }}
+                >
+                  <Database size={17} />
+                  Upload mock data
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <Field label="Full name" field="fullName" />
+              <Field label="Position / job title" field="position" />
+              <Field label="Department / team" field="department" />
+              <Field label="Short job description / responsibility line" field="jobDescription" />
+              <Field label="Company" field="company" />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Telephone number" field="phone" />
+                <Field label="Mobile number" field="mobile" />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Email address" field="email" type="email" />
+                <Field label="Website" field="website" />
+              </div>
+
+              <div className="rounded-3xl bg-slate-50 p-4">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <Building2 size={17} />
+                  Address and extra lines
+                </div>
+                <div className="grid gap-4">
+                  <Field label="Address line 1" field="addressLine1" />
+                  <Field label="Address line 2" field="addressLine2" />
+                  <Field label="Custom line 1" field="customLine1" placeholder="Example: Working hours, assistant, office location" />
+                  <Field label="Custom line 2" field="customLine2" placeholder="Example: Legal entity, registration number, note" />
+                </div>
+              </div>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Disclaimer</span>
+                <textarea
+                  value={form.disclaimer}
+                  onChange={(event) => update("disclaimer", event.target.value)}
+                  className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">Main colour</span>
+                  <input
+                    type="color"
+                    value={form.brandColor}
+                    onChange={(event) => update("brandColor", event.target.value)}
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white p-1"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">Separator colour</span>
+                  <input
+                    type="color"
+                    value={form.accentColor}
+                    onChange={(event) => update("accentColor", event.target.value)}
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white p-1"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <Toggle label="Show address" field="includeAddress" />
+                <Toggle label="Show job description" field="includeJobDescription" />
+                <Toggle label="Show disclaimer" field="includeDisclaimer" />
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                <Eye size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Live preview and export</h2>
+                <p className="text-sm text-slate-500">Copy the signature in the format you need.</p>
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <div
+                ref={previewRef}
+                className="overflow-auto rounded-2xl p-5 shadow-sm"
+                style={{ backgroundColor: KNAUF.surface.card }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 18, paddingBottom: 16, marginBottom: 12, borderBottom: `1px solid ${KNAUF.surface.border}` }}>
+                  <KnaufWordmark height={34} fill={KNAUF.brand.logoCyan} />
+                  <div style={{ width: 1, alignSelf: "stretch", backgroundColor: KNAUF.surface.border }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: KNAUF.typography.heading, fontSize: 18, fontWeight: 700, color: KNAUF.ink.heading, marginBottom: 2 }}>{form.fullName}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: KNAUF.ink.primary }}>{form.position}</div>
+                    {form.department && <div style={{ fontSize: 13, color: KNAUF.ink.muted }}>{form.department}</div>}
+                    {form.includeJobDescription && form.jobDescription && <div style={{ fontSize: 13, color: KNAUF.ink.muted, marginTop: 6 }}>{form.jobDescription}</div>}
+                  </div>
+                </div>
+                <div dangerouslySetInnerHTML={{ __html: signatureHtml }} />
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={copyRichSignature}
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-200"
+                style={{ backgroundColor: KNAUF.brand.accessibleBlue, color: KNAUF.surface.card }}
+              >
+                {copied === "rich" ? <Check size={18} /> : <Clipboard size={18} />}
+                Copy signature for email client
+              </button>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={copyHtml}
+                  className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                >
+                  {copied === "html" ? <Check size={17} /> : <Clipboard size={17} />}
+                  Copy HTML
+                </button>
+
+                <button
+                  type="button"
+                  onClick={copyText}
+                  className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                >
+                  {copied === "text" ? <Check size={17} /> : <Clipboard size={17} />}
+                  Copy plain text
+                </button>
+              </div>
+            </div>
+
+            {copied && (
+              <div
+                className={
+                  copied === "error"
+                    ? "mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-100"
+                    : "mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100"
+                }
+              >
+                {copied === "rich" && "Signature copied with the Knauf logo included. Paste it into your mail client’s signature editor."}
+                {copied === "html" && "HTML copied. Use this if your mail client supports HTML signatures."}
+                {copied === "text" && "Plain text copied."}
+                {copied === "error" && "Copy failed. Try selecting the preview manually and copying it."}
+                {copied === "manual" && "Automatic copy was blocked by the browser. Select the preview box manually and press Ctrl+C / Cmd+C."}
+                {copied === "mock" && "Mock data uploaded. You can edit any field before copying the signature."}
+              </div>
+            )}
+
+            <div className="mt-6 rounded-3xl bg-blue-50 p-5 text-sm leading-6 text-blue-900 ring-1 ring-blue-100">
+              <div className="mb-2 flex items-center gap-2 font-semibold">
+                <Phone size={17} />
+                How to use
+              </div>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Enter or remove the lines you need.</li>
+                <li>Check the live preview.</li>
+                <li>Click <strong>Copy signature for email client</strong>.</li>
+                <li>Paste it into your email signature settings.</li>
+              </ol>
+            </div>
+
+            <div className="mt-4 rounded-3xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+              To analyse your organisation’s official style, paste 2–3 existing signatures here later.
+              I can then adjust spacing, order, colours, disclaimers, and required fields.
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  );
+}
